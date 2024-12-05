@@ -19,7 +19,7 @@ do
     echo "Building ${output_name}..."
 
     env CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build \
-        -installsuffix cgo \    
+        -installsuffix cgo \
         -buildvcs=false \
         -o $output_name \
         -ldflags "\
