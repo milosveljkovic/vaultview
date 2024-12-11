@@ -115,6 +115,13 @@ func (v Vault) ReadKvSecret(mountPath, secretPath string) (map[string]string, ma
 	return sm, metadata, nil
 }
 
+// todo write "write func"
+// func (v Vault) WriteKvSecret(mountPath, secretPath string) (map[string]string, error) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+// 	defer cancel()
+// 	// s, err := v.cli.Secrets.KvV2Write(ctx,mountPath,)
+// }
+
 func (v Vault) ReadTokenInfo() (map[string]string, error) {
 	var tokenInfos = make(map[string]string)
 	var plcs []string

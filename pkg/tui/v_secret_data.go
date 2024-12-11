@@ -16,6 +16,7 @@ type SecretDataView struct {
 	tui        *Tui
 	list       *List
 	secret     *tview.TextView
+	editor     *tview.TextArea
 	currentKey string
 	secretName string
 	keySecret  map[string]string
@@ -26,10 +27,10 @@ func NewSecretDataView(tui *Tui) *SecretDataView {
 		Flex: tview.NewFlex(),
 		tui:  tui,
 		list: NewList(constants.DefaultTitle, tui),
-		// keySecret: make(map[string]string),
 	}
 
 	sdw.secret = sdw.initSecret()
+	sdw.editor = sdw.initEditor()
 
 	sdw.list.EnableSecText()
 	sdw.list.List().SetDoneFunc(func() {
@@ -41,6 +42,7 @@ func NewSecretDataView(tui *Tui) *SecretDataView {
 	})
 	sdw.AddItem(sdw.list.List(), 0, 3, true)
 	sdw.AddItem(sdw.secret, 0, 0, false)
+	sdw.AddItem(sdw.editor, 0, 0, false)
 	sdw.defineEvents()
 	return sdw
 }
@@ -60,16 +62,37 @@ func (sdw *SecretDataView) initSecret() *tview.TextView {
 	return s
 }
 
+func (sdw *SecretDataView) initEditor() *tview.TextArea {
+	s := tview.NewTextArea()
+	s.SetBorder(true)
+	s.SetBorderColor(tcell.ColorLime)
+	s.SetBorderAttributes(tcell.AttrBold)
+	s.SetWrap(true)
+	s.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEsc {
+			// check hashes if different ask for write to remote
+			sdw.tui.App.SetFocus(sdw.list.List())
+			sdw.secret.Clear()
+			sdw.ResizeItem(sdw.secret, 0, 0)
+			sdw.ResizeItem(sdw.editor, 0, 0)
+			sdw.ResizeItem(sdw.list.List(), 0, 3)
+			return nil
+		}
+		return event
+	})
+	return s
+}
+
 func (sdw *SecretDataView) defineEvents() {
 	sdw.list.List().SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 'x' {
+		if event.Rune() == constants.Reveal {
 			sdw.revealSecret()
 			return nil
 		}
 		return event
 	})
 	sdw.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == 'c' {
+		if event.Rune() == constants.Copy {
 			//this can cause clipboard_linux.c:15:10: fatal error: X11/Xlib.h
 			//depends on libX11, dnf install libX11-devel
 			err := clipboard.Init()
@@ -81,9 +104,23 @@ func (sdw *SecretDataView) defineEvents() {
 			clipboard.Write(clipboard.FmtText, []byte(unquoted))
 			sdw.tui.ShowInfoAndContinue("Copied to clipboard!")
 			return nil
+		} else if event.Rune() == constants.Edit {
+			sdw.activateEditor()
+			return nil
 		}
 		return event
 	})
+}
+
+func (sdw *SecretDataView) activateEditor() {
+	s := sdw.keySecret[sdw.currentKey]
+	unquoted, _ := strconv.Unquote(s)
+	sdw.editor.SetTitle(fmt.Sprintf(" [Secret: [::b]%v[::-], Key: [::b]%v[::-]] %v ", sdw.secretName, sdw.currentKey, colorfulPrint("Edit Mode", tcell.ColorLime)))
+	sdw.editor.SetText(unquoted, false)
+	sdw.ResizeItem(sdw.list.List(), 0, 0)
+	sdw.ResizeItem(sdw.secret, 0, 0)
+	sdw.ResizeItem(sdw.editor, 0, 1)
+	sdw.tui.App.SetFocus(sdw.editor)
 }
 
 func (sdw *SecretDataView) revealSecret() {
@@ -92,6 +129,7 @@ func (sdw *SecretDataView) revealSecret() {
 	sdw.secret.SetTitle(fmt.Sprintf(" [Secret: [::b]%v[::-], Key: [::b]%v[::-]] ", sdw.secretName, sdw.currentKey))
 	fmt.Fprintf(sdw.secret, "%s", unquoted)
 	sdw.ResizeItem(sdw.list.List(), 0, 0)
+	sdw.ResizeItem(sdw.editor, 0, 0)
 	sdw.ResizeItem(sdw.secret, 0, 1)
 	sdw.tui.App.SetFocus(sdw.secret)
 }
