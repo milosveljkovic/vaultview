@@ -114,7 +114,7 @@ func (sdw *SecretDataView) Hydrate(data ...interface{}) error {
 }
 
 func (sdw *SecretDataView) getFancyTitle(secretName string, metadata map[string]string) string {
-	fancyDate := parseTime(metadata["created_time"])
+	fancyDate := formatDate(metadata["created_time"])
 	return fmt.Sprintf(" [%v[::b] %v[::-], %s[::b] %v[::-], %s[::b] %v[::-]] ", "Secret:", secretName, "Ver:", metadata["version"], "Created:", fancyDate)
 }
 
