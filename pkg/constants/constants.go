@@ -3,7 +3,7 @@ package constants
 const (
 	DefaultTitle       = "Default Title"
 	SecretsTitle       = "Secrets"
-	SecretEnginesTitle = "Secret Engines"
+	SecretEnginesTitle = "[Secret Engines]"
 	PathTitle          = "Secret Path"
 )
 
