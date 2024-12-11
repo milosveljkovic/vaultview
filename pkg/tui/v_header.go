@@ -30,7 +30,6 @@ func NewHeaderView(tui *Tui) *HeaderView {
 	}
 	header.infoTable = NewInfo(tui)
 
-	header.placeholder.SetText("xxx\nyyy\n")
 	header.SetDirection(tview.FlexColumn)
 	header.AddItem(header.infoTable, 80, 1, false).
 		AddItem(header.placeholder, 0, 1, false).
