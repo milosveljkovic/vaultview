@@ -39,7 +39,7 @@ func NewModalInput(tui *Tui) *ModalInput {
 		SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
 		SetBorderPadding(0, 0, 0, 0)
 
-	m.frame.SetTitle(fmt.Sprintf(" [%s::]%s ", tcell.ColorWhite, "Vault Configuration"))
+	m.frame.SetTitle(fmt.Sprintf(" [%s::]%s ", tcell.ColorWhite, "[Vault Configuration]"))
 	m.frame.SetBorders(0, 0, 1, 0, 0, 0).
 		SetBorder(true).
 		SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
@@ -70,20 +70,20 @@ func NewModalInput(tui *Tui) *ModalInput {
 func (m *ModalInput) Init() {
 	//todo: refactor this
 	if os.Getenv("VAULT_ADDR") != "" {
-		m.AddInputField(colorfulPrint("Vault Addr:", tcell.ColorLime), os.Getenv("VAULT_ADDR"), 0, nil, func(text string) {
+		m.AddInputField(colorfulPrint("Vault Addr: ", tcell.ColorLime), os.Getenv("VAULT_ADDR"), 0, nil, func(text string) {
 			m.primary = text
 		})
 	} else {
-		m.AddInputField(colorfulPrint("Vault Addr:", tcell.ColorLime), "", 0, nil, func(text string) {
+		m.AddInputField(colorfulPrint("Vault Addr: ", tcell.ColorLime), "", 0, nil, func(text string) {
 			m.primary = text
 		})
 	}
 	if os.Getenv("VAULT_TOKEN") != "" {
-		m.AddPasswordField(colorfulPrint("Vault Token:", tcell.ColorLime), os.Getenv("VAULT_TOKEN"), 0, '*', func(text string) {
+		m.AddPasswordField(colorfulPrint("Vault Token: ", tcell.ColorLime), os.Getenv("VAULT_TOKEN"), 0, '*', func(text string) {
 			m.secondary = text
 		})
 	} else {
-		m.AddPasswordField(colorfulPrint("Vault Token:", tcell.ColorLime), "", 0, '*', func(text string) {
+		m.AddPasswordField(colorfulPrint("Vault Token: ", tcell.ColorLime), "", 0, '*', func(text string) {
 			m.secondary = text
 		})
 	}
@@ -105,14 +105,13 @@ func (m *ModalInput) Init() {
 	})
 }
 
-// SetValue sets the current value in the item
 func (m *ModalInput) SetValue(text string, secondary string) {
 	m.primary = text
 	m.secondary = secondary
 	m.Clear(false)
 	m.AddInputField("", text, 50, nil, func(text string) {
 		if len(text) == 0 {
-			text = "(empty)"
+			text = ""
 		}
 		m.primary = text
 	})
@@ -129,23 +128,20 @@ func (m *ModalInput) setSecText(text string) {
 	m.secondary = text
 }
 
-// SetDoneFunc sets the done func for this input.
-// Will be called with the text of the input and a boolean for OK or cancel button.
 func (m *ModalInput) SetDoneFunc(handler func(string, string, bool)) *ModalInput {
 	m.done = handler
 	return m
 }
 
-// Draw draws this primitive onto the screen.
 func (m *ModalInput) Draw(screen tcell.Screen) {
 	// Calculate the width of this modal.
 	buttonsWidth := 50
 	screenWidth, screenHeight := screen.Size()
 	width := screenWidth / 3
-	if width < buttonsWidth {
+	if width < buttonsWidth { // width is now without the box border.
+
 		width = buttonsWidth
 	}
-	// width is now without the box border.
 
 	// Set the modal's position and size.
 	height := m.DialogHeight

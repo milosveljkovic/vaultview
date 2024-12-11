@@ -99,7 +99,7 @@ func (sdw *SecretDataView) revealSecret() {
 func (sdw *SecretDataView) Hydrate(data ...interface{}) error {
 	sp := data[0].(string)
 	se := data[1].(string)
-	secrets, err := sdw.tui.vault.ReadKvSecret(se, sp)
+	secrets, metadata, err := sdw.tui.vault.ReadKvSecret(se, sp)
 	if err != nil {
 		sName := utils.GetChildPath(sp)
 		sdw.tui.ShowErrAndContinue(fmt.Errorf("secret '%s' does not exist: %v", sName, err))
@@ -107,9 +107,15 @@ func (sdw *SecretDataView) Hydrate(data ...interface{}) error {
 		sdw.tui.TogglePageAndRefresh(constants.ViewSecrets)
 	}
 	sdw.secretName = utils.GetChildPath(sp)
-	sdw.list.List().SetTitle(fmt.Sprintf(" [Secret: [::b]%v[::-]] ", sdw.secretName))
+
+	sdw.list.List().SetTitle(sdw.getFancyTitle(sdw.secretName, metadata))
 	sdw.PopulateList(secrets)
 	return nil
+}
+
+func (sdw *SecretDataView) getFancyTitle(secretName string, metadata map[string]string) string {
+	fancyDate := parseTime(metadata["created_time"])
+	return fmt.Sprintf(" [%v[::b] %v[::-], %s[::b] %v[::-], %s[::b] %v[::-]] ", "Secret:", secretName, "Ver:", metadata["version"], "Created:", fancyDate)
 }
 
 func (sdw *SecretDataView) PopulateList(secrets map[string]string) {

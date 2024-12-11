@@ -56,6 +56,6 @@ func (it *Info) UpdateInfoTable(data models.Info) {
 		nextRow = it.setCell(nextRow, data.VaultAddr)
 		nextRow = it.setCell(nextRow, data.Sealed)
 		nextRow = it.setCell(nextRow, data.TokenPolicies)
-		nextRow = it.setCell(nextRow, data.TokenExpirationTime)
+		nextRow = it.setCell(nextRow, parseTime(data.TokenExpirationTime))
 	})
 }

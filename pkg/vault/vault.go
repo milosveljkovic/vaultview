@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+	"vaultview/pkg/constants"
 
 	"github.com/hashicorp/vault-client-go"
 )
@@ -16,7 +16,7 @@ type VaultSvc interface {
 	ReadSecretEngines() ([]string, error)
 	ListKvSecrets(mountPath, secretPath string) ([]string, error)
 	ReadTokenInfo() (map[string]string, error)
-	ReadKvSecret(mountPath, secretPath string) (map[string]string, error)
+	ReadKvSecret(mountPath, secretPath string) (map[string]string, map[string]string, error)
 	IsErrorStatus(err error, status int) bool
 }
 
@@ -82,25 +82,37 @@ func (v Vault) ListKvSecrets(mountPath, secretPath string) ([]string, error) {
 	return s.Data.Keys, nil
 }
 
-func (v Vault) ReadKvSecret(mountPath, secretPath string) (map[string]string, error) {
+func (v Vault) ReadKvSecret(mountPath, secretPath string) (map[string]string, map[string]string, error) {
 	sm := make(map[string]string)
+	metadata := make(map[string]string)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	s, err := v.cli.Secrets.KvV2Read(ctx, secretPath, vault.WithMountPath(mountPath))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for i, s := range s.Data.Data {
-		// if value, ok := s.(string); ok != true {
-		// 	//err
-		// }
 		json, err := json.Marshal(s)
 		if err != nil {
-			log.Fatalf("Error marshaling Data: %v", err)
+			return nil, nil, fmt.Errorf("Error marshaling Data: %v", err)
 		}
 		sm[i] = string(json)
 	}
-	return sm, nil
+	for i, s := range s.Data.Metadata {
+		switch v := s.(type) {
+		case string:
+			metadata[i] = v
+		case bool:
+			metadata[i] = fmt.Sprintf("%v", v)
+		case json.Number:
+			if intVal, err := v.Int64(); err == nil {
+				metadata[i] = fmt.Sprintf("%d", intVal)
+			}
+		default:
+			metadata[i] = constants.NAValue
+		}
+	}
+	return sm, metadata, nil
 }
 
 func (v Vault) ReadTokenInfo() (map[string]string, error) {
