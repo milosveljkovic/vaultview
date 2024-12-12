@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"strconv"
 	"vaultview/pkg/constants"
 	"vaultview/pkg/utils"
 
@@ -13,13 +12,13 @@ import (
 
 type SecretDataView struct {
 	*tview.Flex
-	tui        *Tui
-	list       *List
-	secret     *tview.TextView
-	editor     *tview.TextArea
-	currentKey string
-	secretName string
-	keySecret  map[string]string
+	tui                    *Tui
+	list                   *List
+	secret                 *tview.TextView
+	editor                 *tview.TextArea
+	currentKey, secretName string
+	secretEng, secretPath  string
+	keySecret              map[string]string
 }
 
 func NewSecretDataView(tui *Tui) *SecretDataView {
@@ -77,6 +76,43 @@ func (sdw *SecretDataView) initEditor() *tview.TextArea {
 			sdw.ResizeItem(sdw.editor, 0, 0)
 			sdw.ResizeItem(sdw.list.List(), 0, 3)
 			return nil
+		} else if event.Key() == tcell.KeyCtrlS {
+			// check hashes if different save it
+			// sdw.tui.vault.WriteKv2Secret()
+			s := sdw.keySecret[sdw.currentKey]
+			hashedS := getHash(s)
+			x := sdw.editor.GetText()
+			hashedX := getHash(x)
+			fmt.Sprintf(x)
+			fmt.Sprintf(s)
+			if s != x {
+				//update
+				sdw.keySecret[sdw.currentKey] = x
+				sdwKeySecretAny := make(map[string]any)
+				for k, v := range sdw.keySecret {
+					sdwKeySecretAny[k] = v
+				}
+				if err := sdw.tui.vault.WriteKv2Secret(sdw.secretEng, sdw.secretPath, sdwKeySecretAny); err != nil {
+					sdw.tui.ShowErrAndContinue(err)
+				} else {
+					sdw.tui.ShowInfoAndContinue(fmt.Sprintf("secet '%s' updated successfuly!", sdw.secretName))
+					sdw.tui.App.SetFocus(sdw.list.List())
+					sdw.secret.Clear()
+					sdw.list.Clear()
+					sdw.Hydrate(sdw.secretPath, sdw.secretEng)
+					sdw.ResizeItem(sdw.secret, 0, 0)
+					sdw.ResizeItem(sdw.editor, 0, 0)
+					sdw.ResizeItem(sdw.list.List(), 0, 3)
+				}
+			}
+			fmt.Sprintf(hashedS)
+			fmt.Sprintf(hashedX)
+			// sdw.tui.App.SetFocus(sdw.list.List())
+			// sdw.secret.Clear()
+			// sdw.ResizeItem(sdw.secret, 0, 0)
+			// sdw.ResizeItem(sdw.editor, 0, 0)
+			// sdw.ResizeItem(sdw.list.List(), 0, 3)
+			return nil
 		}
 		return event
 	})
@@ -100,8 +136,7 @@ func (sdw *SecretDataView) defineEvents() {
 				sdw.tui.ShowErrAndContinue(fmt.Errorf("copy error: %s", err.Error()))
 			}
 			s := sdw.keySecret[sdw.currentKey]
-			unquoted, _ := strconv.Unquote(s)
-			clipboard.Write(clipboard.FmtText, []byte(unquoted))
+			clipboard.Write(clipboard.FmtText, []byte(s))
 			sdw.tui.ShowInfoAndContinue("Copied to clipboard!")
 			return nil
 		} else if event.Rune() == constants.Edit {
@@ -114,9 +149,8 @@ func (sdw *SecretDataView) defineEvents() {
 
 func (sdw *SecretDataView) activateEditor() {
 	s := sdw.keySecret[sdw.currentKey]
-	unquoted, _ := strconv.Unquote(s)
 	sdw.editor.SetTitle(fmt.Sprintf(" [Secret: [::b]%v[::-], Key: [::b]%v[::-]] %v ", sdw.secretName, sdw.currentKey, colorfulPrint("Edit Mode", tcell.ColorLime)))
-	sdw.editor.SetText(unquoted, false)
+	sdw.editor.SetText(s, false)
 	sdw.ResizeItem(sdw.list.List(), 0, 0)
 	sdw.ResizeItem(sdw.secret, 0, 0)
 	sdw.ResizeItem(sdw.editor, 0, 1)
@@ -125,9 +159,8 @@ func (sdw *SecretDataView) activateEditor() {
 
 func (sdw *SecretDataView) revealSecret() {
 	s := sdw.keySecret[sdw.currentKey]
-	unquoted, _ := strconv.Unquote(s)
 	sdw.secret.SetTitle(fmt.Sprintf(" [Secret: [::b]%v[::-], Key: [::b]%v[::-]] ", sdw.secretName, sdw.currentKey))
-	fmt.Fprintf(sdw.secret, "%s", unquoted)
+	fmt.Fprintf(sdw.secret, "%s", s)
 	sdw.ResizeItem(sdw.list.List(), 0, 0)
 	sdw.ResizeItem(sdw.editor, 0, 0)
 	sdw.ResizeItem(sdw.secret, 0, 1)
@@ -135,16 +168,16 @@ func (sdw *SecretDataView) revealSecret() {
 }
 
 func (sdw *SecretDataView) Hydrate(data ...interface{}) error {
-	sp := data[0].(string)
-	se := data[1].(string)
-	secrets, metadata, err := sdw.tui.vault.ReadKvSecret(se, sp)
+	sdw.secretPath = data[0].(string)
+	sdw.secretEng = data[1].(string)
+	secrets, metadata, err := sdw.tui.vault.ReadKvSecret(sdw.secretEng, sdw.secretPath)
 	if err != nil {
-		sName := utils.GetChildPath(sp)
+		sName := utils.GetChildPath(sdw.secretPath)
 		sdw.tui.ShowErrAndContinue(fmt.Errorf("secret '%s' does not exist: %v", sName, err))
 		sdw.list.Clear()
 		sdw.tui.TogglePageAndRefresh(constants.ViewSecrets)
 	}
-	sdw.secretName = utils.GetChildPath(sp)
+	sdw.secretName = utils.GetChildPath(sdw.secretPath)
 
 	sdw.list.List().SetTitle(sdw.getFancyTitle(sdw.secretName, metadata))
 	sdw.PopulateList(secrets)

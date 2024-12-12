@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"vaultview/pkg/constants"
 
 	"github.com/hashicorp/vault-client-go"
+	"github.com/hashicorp/vault-client-go/schema"
 )
 
 type VaultSvc interface {
@@ -17,6 +19,7 @@ type VaultSvc interface {
 	ListKvSecrets(mountPath, secretPath string) ([]string, error)
 	ReadTokenInfo() (map[string]string, error)
 	ReadKvSecret(mountPath, secretPath string) (map[string]string, map[string]string, error)
+	WriteKv2Secret(mountPath, secretPath string, updatedSecret map[string]any) error
 	IsErrorStatus(err error, status int) bool
 }
 
@@ -96,7 +99,7 @@ func (v Vault) ReadKvSecret(mountPath, secretPath string) (map[string]string, ma
 		if err != nil {
 			return nil, nil, fmt.Errorf("Error marshaling Data: %v", err)
 		}
-		sm[i] = string(json)
+		sm[i] = prettifyString(string(json))
 	}
 	for i, s := range s.Data.Metadata {
 		switch v := s.(type) {
@@ -115,12 +118,25 @@ func (v Vault) ReadKvSecret(mountPath, secretPath string) (map[string]string, ma
 	return sm, metadata, nil
 }
 
-// todo write "write func"
-// func (v Vault) WriteKvSecret(mountPath, secretPath string) (map[string]string, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-// 	defer cancel()
-// 	// s, err := v.cli.Secrets.KvV2Write(ctx,mountPath,)
-// }
+func prettifyString(str string) string {
+	unquoted, _ := strconv.Unquote(str)
+	return unquoted
+}
+
+func (v Vault) WriteKv2Secret(mountPath, secretPath string, data map[string]any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	resp, err := v.cli.Secrets.KvV2Write(ctx, secretPath, schema.KvV2WriteRequest{
+		Data: data,
+	},
+		vault.WithMountPath(mountPath),
+	)
+	if err != nil {
+		return err
+	}
+	fmt.Sprint(resp)
+	return nil
+}
 
 func (v Vault) ReadTokenInfo() (map[string]string, error) {
 	var tokenInfos = make(map[string]string)
