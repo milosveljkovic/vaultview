@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"time"
 	"vaultview/pkg/constants"
@@ -11,7 +13,7 @@ import (
 const dateFormat = "Jan 2, 2006 3:04 PM"
 
 func colorfulPrint(s string, c tcell.Color) string {
-	return fmt.Sprintf("[%s::]%s", c, s)
+	return fmt.Sprintf("[%s::]%s[::-]", c, s)
 }
 
 func formatDate(s string) string {
@@ -21,4 +23,10 @@ func formatDate(s string) string {
 		return constants.NAValue
 	}
 	return t.Format(dateFormat)
+}
+
+func getHash(s string) string {
+	hash := md5.Sum([]byte(s))
+	checksum := hex.EncodeToString(hash[:])
+	return checksum
 }
