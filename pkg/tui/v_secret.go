@@ -136,7 +136,7 @@ func (sw *SecretView) SelectedSecret() {
 		if _, ok := sw.cachedSecrets[sePath]; !ok {
 			secrets, err := sw.tui.vault.ListKvSecrets(sw.engine, p)
 			if err != nil {
-				sw.tui.ShowErrAndContinue(err)
+				sw.tui.ShowStatusAndContinue(err.Error(), ErrStatus)
 				sw.secretsHardRefresh()
 				return
 			}
@@ -157,7 +157,7 @@ func (sw *SecretView) secretsHardRefresh() {
 			currSEPath := sw.getCachedSecretKey(p)
 			if err != nil {
 				if sw.tui.vault.IsErrorStatus(err, http.StatusNotFound) {
-					sw.tui.ShowErrAndContinue(fmt.Errorf("path '%s' does not exist: %v", p, err))
+					sw.tui.ShowStatusAndContinue(fmt.Sprintf("path '%s' does not exist: %v", p, err), ErrStatus)
 					seParentPath := sw.getCachedSecretKey(utils.GetParentPath(p))
 					seChildPath := sw.getCachedSecretKey(utils.GetChildPath(p))
 					delete(sw.cachedSecrets, currSEPath)

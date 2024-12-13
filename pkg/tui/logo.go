@@ -63,6 +63,10 @@ func (l *Logo) Info(msg string) {
 	l.refreshStatus(msg, tcell.ColorGray)
 }
 
+func (l *Logo) Success(msg string) {
+	l.refreshStatus(msg, tcell.ColorGreen)
+}
+
 func (l *Logo) refreshStatus(msg string, color tcell.Color) {
 	l.status.Clear()
 	l.status.SetBackgroundColor(color)

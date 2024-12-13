@@ -20,3 +20,9 @@ const (
 	NAValue = "n/a"
 	Mask    = "*****"
 )
+
+const (
+	Edit   = 'e'
+	Copy   = 'c'
+	Reveal = 'x'
+)

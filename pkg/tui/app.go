@@ -91,6 +91,10 @@ func (tui *Tui) PublishErr(msg string) {
 	tui.views[constants.ViewHeader].(HeaderViewI).Err(msg)
 }
 
+func (tui *Tui) PublishSuccess(msg string) {
+	tui.views[constants.ViewHeader].(HeaderViewI).Success(msg)
+}
+
 func (tui *Tui) ClearStatus() {
 	tui.views[constants.ViewHeader].(HeaderViewI).Reset()
 }
@@ -103,18 +107,15 @@ func (tui *Tui) ShowErrAndStop(err error) {
 	}()
 }
 
-func (tui *Tui) ShowErrAndContinue(err error) {
-	tui.PublishErr(err.Error())
-	go func() {
-		time.Sleep(time.Second * 5)
-		tui.App.QueueUpdateDraw(func() {
-			tui.ClearStatus()
-		})
-	}()
-}
-
-func (tui *Tui) ShowInfoAndContinue(msg string) {
-	tui.PublishInfo(msg)
+func (tui *Tui) ShowStatusAndContinue(msg string, statusType StatusType) {
+	switch statusType {
+	case ErrStatus:
+		tui.PublishErr(msg)
+	case InfoStatus:
+		tui.PublishInfo(msg)
+	case SuccessStatus:
+		tui.PublishSuccess(msg)
+	}
 	go func() {
 		time.Sleep(time.Second * 5)
 		tui.App.QueueUpdateDraw(func() {
