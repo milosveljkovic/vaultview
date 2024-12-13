@@ -10,6 +10,7 @@ type HeaderViewI interface {
 	View
 	Info(msg string)
 	Err(msg string)
+	Success(msg string)
 	Reset()
 }
 
@@ -20,6 +21,14 @@ type HeaderView struct {
 	infoTable   *Info
 	placeholder *tview.TextView
 }
+
+type StatusType int
+
+const (
+	ErrStatus StatusType = iota + 1
+	InfoStatus
+	SuccessStatus
+)
 
 func NewHeaderView(tui *Tui) *HeaderView {
 	header := &HeaderView{
@@ -46,6 +55,10 @@ func (hw *HeaderView) Hydrate(data ...interface{}) error {
 	infoModel.RegisterListener(hw.infoTable)
 	infoModel.TriggerInfoChange()
 	return nil
+}
+
+func (hw *HeaderView) Success(msg string) {
+	hw.logo.Success(msg)
 }
 
 func (hw *HeaderView) Info(msg string) {
