@@ -30,9 +30,10 @@ Vaultview is available for Linux, macOS and Windows platforms. Binaries can be d
 - cache secrets
 - `<x>` - secret data preview
 - `<c>` - copy secret key to clipboard
+- `<e>`- edit secret
+- `<Tab>`- move through the list
 
 ## Todo
-- edit secret
 - add new secret
 - enable new secret engine
 - all feature above for policies (+token creations)
