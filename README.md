@@ -29,8 +29,9 @@ Vaultview is available for Linux, macOS and Windows platforms. Binaries can be d
 - `Ctrl+R` - hard reload of the secret
 - cache secrets
 - `<x>` - secret data preview
-- `<c>` - copy secret key to clipboard
 - `<e>`- edit secret
+- `Ctrl+S` - save secret
+- `<c>` - copy secret key to clipboard
 - `<Tab>`- move through the list
 
 ## Todo
