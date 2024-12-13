@@ -64,6 +64,15 @@ func (l *List) List() *tview.List {
 	return l.list
 }
 
+func (l *List) NextItem() {
+	nextItem := l.list.GetCurrentItem() + 1
+	if nextItem >= l.list.GetItemCount() {
+		l.list.SetCurrentItem(0)
+	} else {
+		l.list.SetCurrentItem(nextItem)
+	}
+}
+
 func (l *List) getItemText() string {
 	i := l.list.GetCurrentItem()
 	main, _ := l.list.GetItemText(i)
